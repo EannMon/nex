@@ -17,7 +17,7 @@ export default function ReportsView() {
         <div className="h-full bg-slate-50 dark:bg-slate-950 p-4 md:p-8 overflow-y-auto">
             <div className="max-w-5xl mx-auto space-y-6">
                 
-                {/* Header */}
+                {/* Header and Filters (Unchanged) */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <h2 className="text-2xl font-bold flex items-center gap-2">
@@ -30,7 +30,6 @@ export default function ReportsView() {
                     </div>
                 </div>
 
-                {/* Filters */}
                 <div className="flex gap-2">
                     <div className="relative flex-1 max-w-sm">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -39,37 +38,41 @@ export default function ReportsView() {
                     <Button variant="outline" size="icon"><Filter className="h-4 w-4" /></Button>
                 </div>
 
-                {/* Data Table (Card Style) */}
-                <Card className="shadow-sm">
-                    <CardHeader className="border-b bg-slate-100/50 py-3">
-                        <div className="grid grid-cols-12 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                            <div className="col-span-2">Time</div>
-                            <div className="col-span-2">Type</div>
-                            <div className="col-span-3">Location</div>
-                            <div className="col-span-3">Details</div>
-                            <div className="col-span-2 text-right">Status</div>
+                {/* --- Scrollable Data Table --- */}
+                <Card className="shadow-sm overflow-hidden">
+                    <div className="overflow-x-auto"> {/* Container for horizontal scroll */}
+                        <div className="min-w-[800px]"> {/* Forces the grid to maintain its shape */}
+                            <CardHeader className="border-b bg-slate-100/50 py-3">
+                                <div className="grid grid-cols-12 text-xs font-bold text-muted-foreground uppercase tracking-wider px-4">
+                                    <div className="col-span-2">Time</div>
+                                    <div className="col-span-2">Type</div>
+                                    <div className="col-span-3">Location</div>
+                                    <div className="col-span-3">Details</div>
+                                    <div className="col-span-2 text-right">Status</div>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                                {logs.map((log, i) => (
+                                    <div key={log.id} className={`grid grid-cols-12 gap-2 p-4 text-sm items-center hover:bg-slate-50 transition-colors ${i !== logs.length - 1 ? 'border-b' : ''}`}>
+                                        <div className="col-span-2 font-mono text-xs text-slate-500">{log.time}</div>
+                                        <div className="col-span-2">
+                                            <Badge variant="outline" className="font-normal">{log.type}</Badge>
+                                        </div>
+                                        <div className="col-span-3 font-medium">{log.location}</div>
+                                        <div className="col-span-3 text-muted-foreground truncate" title={log.details}>{log.details}</div>
+                                        <div className="col-span-2 text-right">
+                                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium 
+                                                ${log.status === 'Resolved' ? 'bg-green-100 text-green-700' : 
+                                                  log.status === 'Alert Sent' ? 'bg-red-100 text-red-700' : 
+                                                  'bg-blue-100 text-blue-700'}`}>
+                                                {log.status}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </CardContent>
                         </div>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                        {logs.map((log, i) => (
-                            <div key={log.id} className={`grid grid-cols-12 gap-2 p-4 text-sm items-center hover:bg-slate-50 transition-colors ${i !== logs.length - 1 ? 'border-b' : ''}`}>
-                                <div className="col-span-2 font-mono text-xs text-slate-500">{log.time}</div>
-                                <div className="col-span-2">
-                                    <Badge variant="outline" className="font-normal">{log.type}</Badge>
-                                </div>
-                                <div className="col-span-3 font-medium">{log.location}</div>
-                                <div className="col-span-3 text-muted-foreground truncate" title={log.details}>{log.details}</div>
-                                <div className="col-span-2 text-right">
-                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium 
-                                        ${log.status === 'Resolved' ? 'bg-green-100 text-green-700' : 
-                                          log.status === 'Alert Sent' ? 'bg-red-100 text-red-700' : 
-                                          'bg-blue-100 text-blue-700'}`}>
-                                        {log.status}
-                                    </span>
-                                </div>
-                            </div>
-                        ))}
-                    </CardContent>
+                    </div>
                 </Card>
             </div>
         </div>

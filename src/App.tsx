@@ -119,6 +119,14 @@ export default function App() {
                                     <Clock size={20} /> Peak Zone Intel
                                 </Button>
 
+                                <Button 
+                                    variant={currentView === 'peak' ? 'default' : 'ghost'} 
+                                    className={`justify-start gap-4 h-14 rounded-xl text-sm font-bold ${currentView === 'peak' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:bg-slate-50'}`} 
+                                    onClick={() => handleNavigation('reports')}
+                                >
+                                    <Clock size={20} /> Generate Incident Report
+                                </Button>
+
                             </nav>
 
                             <div className="mt-auto space-y-4 pt-6 border-t border-slate-100 dark:border-slate-800">

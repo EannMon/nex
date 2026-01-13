@@ -75,27 +75,30 @@ const peakRiskZones = [
 // --- 3. LEGEND DEFINITIONS ---
 const LEGENDS = {
     pain: [
-        { color: "#be123c", label: "Critical Label", desc: "Wait > 30 mins." },
-        { color: "#ff9900", label: "High Label", desc: "Wait 21-30 mins." },
-        { color: "#ffe063", label: "Moderate Label", desc: "Wait 11-20 mins." },
-        { color: "#22c55e", label: "Low Label", desc: "Wait < 10 mins." },
+        { color: "#be123c", label: "Critical", desc: "Wait > 30 mins." },
+        { color: "#ff9900", label: "High", desc: "Wait 21-30 mins." },
+        { color: "#ffe063", label: "Moderate", desc: "Wait 11-20 mins." },
+        { color: "#22c55e", label: "Low", desc: "Wait < 10 mins." },
     ],
     congestion: [
-        { color: "#ef4444", label: "Gridlock Label", desc: "Velocity < 10 kph." },
-        { color: "#f59e0b", label: "Heavy Label", desc: "Velocity 10-25 kph." },
-        { color: "#22c55e", label: "Flowing Label", desc: "Velocity > 25 kph." },
+        { color: "#ef4444", label: "Gridlock", desc: "Velocity < 10 kph." },
+        { color: "#f59e0b", label: "Heavy", desc: "Velocity 10-25 kph." },
+        { color: "#22c55e", label: "Flowing", desc: "Velocity > 25 kph." },
     ],
     peak: [
-        { color: "#7c3aed", label: "Bottleneck Label", desc: "Temporal delays." },
-        { color: "#f59e0b", label: "Pedestrian Label", desc: "Surge zones." },
-        { color: "#ef4444", label: "Strict Flow Label", desc: "One-way/Merge." },
-        { color: "#db2777", label: "Commercial Label", desc: "Street parking." },
+        { color: "#7c3aed", label: "Bottleneck", desc: "Temporal delays." },
+        { color: "#f59e0b", label: "Pedestrian", desc: "Surge zones." },
+        { color: "#ef4444", label: "Strict Flow", desc: "One-way/Merge." },
+        { color: "#db2777", label: "Commercial", desc: "Street parking." },
+    ],
+    reports : [
+        { color: "#3b82f6", label: "Info", desc: "General information logs." }
     ]
 };
 
 const getHeatmapColorByWait = (waitMinutes: number) => {
     if (waitMinutes > 30) return "#be123c"; 
-    if (waitMinutes >= 21) return "#ff9900"; 
+    if (waitMinutes >= 30) return "#ff9900"; 
     if (waitMinutes >= 11) return "#ffe063"; 
     return "#22c55e"; 
 };
@@ -106,7 +109,7 @@ function MapEvents({ setZoom }: { setZoom: (z: number) => void }) {
 }
 
 export default function LGUDashboard() {
-    const [activeTab, setActiveTab] = useState<"pain" | "congestion" | "peak">("pain");
+    const [activeTab, setActiveTab] = useState<"pain" | "congestion" | "reports" | "peak">("pain");
     const [isLegendExpanded, setIsLegendExpanded] = useState(false);
     const [zoomLevel, setZoomLevel] = useState(14);
     const [weather, setWeather] = useState({ temp: 31, main: "Clear", loading: true });
@@ -157,13 +160,18 @@ export default function LGUDashboard() {
                             positions={r.path} 
                             pathOptions={{ 
                                 color: activeTab === 'congestion' ? r.color : "#cbd5e1", 
-                                weight: activeTab === 'congestion' ? 8 : 4, 
+                                weight: activeTab === 'congestion' ? 8 : 3, 
                                 opacity: activeTab === 'congestion' ? 0.9 : 0.4, 
                                 lineCap: 'round' 
                             }}
-                        />
+                        >
+                            {activeTab === 'congestion' && (
+                                <Tooltip sticky>
+                                    <div className="font-bold text-xs">{r.name}: {r.count}</div>
+                                </Tooltip>
+                            )}
+                        </Polyline>
                     ))}
-
                     {activeTab === 'pain' && marikinaHeatmaps.map((p) => {
                         const dynamicColor = getHeatmapColorByWait(p.wait);
                         return (
@@ -180,7 +188,6 @@ export default function LGUDashboard() {
                     ))}
                 </MapContainer>
 
-                {/* --- COMPACT MINIMIZABLE LEGEND (BOTTOM LEFT) --- */}
                 <div className="absolute bottom-6 left-4 z-[500] flex flex-col items-start gap-2">
                     {!isLegendExpanded ? (
                         <div className="group flex items-center gap-2">
@@ -230,7 +237,16 @@ export default function LGUDashboard() {
                                     <div className="h-9 w-9 bg-blue-700 rounded-lg flex items-center justify-center text-white shadow-lg"><Activity size={18} /></div>
                                     <div>
                                         <CardTitle className="text-xs font-black text-slate-900 tracking-tighter uppercase">Marikina Mobility</CardTitle>
-                                        <CardDescription className="text-[9px] font-bold text-blue-600 uppercase mt-1">LGU Live Dashboard</CardDescription>
+                                            <CardDescription className="text-[9px] font-bold text-blue-600 uppercase mt-1 flex items-center gap-1">
+                                                {loadingRoads ? (
+                                                    <>
+                                                        <Loader2 size={10} className="animate-spin" /> 
+                                                        Syncing routes...
+                                                    </>
+                                                ) : (
+                                                    "LGU Live Dashboard"
+                                                )}
+                                            </CardDescription>
                                     </div>
                                 </div>
                                 <Badge variant="destructive" className="animate-pulse text-[8px] h-4">LIVE</Badge>
