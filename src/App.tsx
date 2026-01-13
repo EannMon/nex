@@ -1,119 +1,158 @@
 import { useState } from "react";
-import LGUDashboard from "./components/dashboard/LGUDashboard";
-import ReportsView from "./components/dashboard/ReportsView"; // Import the new component
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Activity, Menu, LayoutDashboard, AlertOctagon, FileText, LogOut, X, ShieldAlert, MapPin } from "lucide-react";
 
-// (Keep your Login Mock Data and RiskPriorityList same as before...)
-const riskPriorityList = [ /* ... same as previous prompt ... */ ];
+// --- COMPONENT IMPORTS ---
+import LGUDashboard from "@/components/dashboard/LGUDashboard";
+import CommuterPainPoints from "@/components/dashboard/CommuterPainPoints";
+import ReportsView from "@/components/dashboard/ReportsView"; 
+// ADD THESE NEW IMPORTS:
+import CongestionAnalytics from "@/components/dashboard/CongestionAnalytics";
+import PeakZoneAnalysis from "@/components/dashboard/PeakZoneAnalysis";
+import LoginForm from "./components/auth/LoginForm"; 
+
+// --- UI IMPORTS ---
+import { Button } from "@/components/ui/button";
+
+// --- DATA/TYPE IMPORTS ---
+import { type User } from "@/data/users"; 
+
+// --- ICON IMPORTS ---
+import { 
+    Activity, 
+    Menu, 
+    LayoutDashboard, 
+    AlertOctagon, 
+    FileText, 
+    LogOut, 
+    X,
+    Navigation, // Imported for Congestion
+    Clock       // Imported for Peak Zones
+} from "lucide-react";
+
+// 1. UPDATE STATE TYPE: Add "congestion" and "peak"
+type ViewState = "dashboard" | "pain-points" | "reports" | "congestion" | "peak";
 
 export default function App() {
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [currentView, setCurrentView] = useState<"dashboard" | "risk" | "reports">("dashboard"); // Added "reports"
+    const [user, setUser] = useState<User | null>(null); 
+    const [currentView, setCurrentView] = useState<ViewState>("dashboard");
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-    const navigate = (view: "dashboard" | "risk" | "reports") => {
+    const handleLogin = (authenticatedUser: User) => setUser(authenticatedUser);
+
+    const handleNavigation = (view: ViewState) => {
         setCurrentView(view);
-        setIsMenuOpen(false);
+        setIsMenuOpen(false); 
     };
 
-    if (!isLoggedIn) {
-        // ... (Keep existing Login Page code) ...
-        return (
-             <div className="flex min-h-screen items-center justify-center bg-slate-950 p-4">
-                <Card className="w-full max-w-sm border-slate-800 bg-slate-900 text-white shadow-2xl">
-                    <CardHeader className="text-center">
-                        <div className="mx-auto bg-blue-600 w-12 h-12 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-blue-900/50">
-                            <Activity className="text-white h-6 w-6" />
-                        </div>
-                        <CardTitle className="text-2xl font-bold tracking-tight">Marikina Mobility</CardTitle>
-                        <CardDescription className="text-slate-400">LGU Operations Portal</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <Label>Official ID</Label>
-                            <Input placeholder="Enter Officer ID" className="bg-slate-800 border-slate-700" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Access Key</Label>
-                            <Input type="password" placeholder="••••••••" className="bg-slate-800 border-slate-700" />
-                        </div>
-                        <Button onClick={() => setIsLoggedIn(true)} className="w-full bg-blue-600 hover:bg-blue-500 font-bold">
-                            Enter Portal
-                        </Button>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
+    const handleLogout = () => {
+        setUser(null);
+        setIsMenuOpen(false);
+        setCurrentView("dashboard");
+    };
+
+    if (!user) return <LoginForm onLogin={handleLogin} />;
 
     return (
-        <div className="min-h-screen w-full bg-slate-900 flex items-center justify-center p-0 md:p-6 lg:p-8">
-            <div className="w-full max-w-[1200px] h-[100dvh] md:h-[90vh] bg-background md:rounded-3xl overflow-hidden shadow-2xl flex flex-col relative border border-slate-200 dark:border-slate-800">
+        <div className="min-h-screen w-full bg-slate-900 flex items-center justify-center p-0 md:p-6 lg:p-8 transition-all duration-300 font-sans">
+            <div className="w-full max-w-[1400px] h-[100dvh] md:h-[90vh] bg-background md:rounded-3xl overflow-hidden shadow-2xl flex flex-col relative border border-slate-200 dark:border-slate-800">
                 
-                {/* HAMBURGER (Fixed Top Right) */}
-                <div className="absolute top-0 right-0 z-[500] p-4 pointer-events-none flex justify-end">
+                {/* --- FLOATING MENU TRIGGER --- */}
+                <div className="absolute top-4 right-4 z-[500] pointer-events-none">
                     <Button 
-                        size="icon" variant="secondary" 
-                        className="pointer-events-auto shadow-xl rounded-full h-12 w-12 bg-white/90 backdrop-blur text-slate-900 hover:bg-white hover:scale-105 transition-all"
+                        size="icon" 
+                        className="focus-visible:border-ring focus-visible:ring-ring/50 border border-transparent pointer-events-auto shadow-xl rounded-full h-10 w-10 md:h-12 md:w-12 bg-white/90 backdrop-blur text-slate-900 hover:bg-white hover:scale-105 transition-all"
                         onClick={() => setIsMenuOpen(true)}
                     >
-                        <Menu className="h-6 w-6" />
+                        <Menu size={24} />
                     </Button>
                 </div>
 
-                {/* MENU OVERLAY */}
+                {/* --- NAVIGATION MENU OVERLAY --- */}
                 {isMenuOpen && (
-                    <div className="absolute inset-0 z-[600] bg-black/60 backdrop-blur-sm flex justify-end">
-                        <div className="w-[300px] h-full bg-white dark:bg-slate-900 p-6 shadow-2xl animate-in slide-in-from-right-10 duration-200 flex flex-col border-l">
-                            <div className="flex items-center justify-between mb-8 border-b pb-4">
-                                <div className="font-bold text-lg flex items-center gap-2"><Activity className="text-blue-600"/> Menu</div>
-                                <Button size="icon" variant="ghost" onClick={() => setIsMenuOpen(false)}><X className="h-5 w-5" /></Button>
+                    <div className="absolute inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex justify-end animate-in fade-in duration-200">
+                        <div className="w-[85%] max-w-[320px] h-full bg-white dark:bg-slate-900 p-6 shadow-2xl animate-in slide-in-from-right duration-300 flex flex-col border-l border-slate-100 dark:border-slate-800 overflow-y-auto">
+                            
+                            <div className="flex items-center justify-between mb-8 border-b pb-6">
+                                <div className="flex flex-col">
+                                    <span className="font-black text-xl text-slate-900 dark:text-white flex items-center gap-2 uppercase tracking-tighter">
+                                        <Activity className="text-blue-600 h-6 w-6"/> Intel Portal
+                                    </span>
+                                    <span className="text-[10px] text-blue-600 font-bold uppercase tracking-widest mt-1">Hello, {user.name}</span>
+                                </div>
+                                <Button size="icon" variant="ghost" onClick={() => setIsMenuOpen(false)} className="rounded-full hover:bg-slate-100">
+                                    <X className="h-6 w-6 text-slate-400" />
+                                </Button>
                             </div>
-                            <nav className="flex flex-col gap-2 flex-1">
-                                <Button variant={currentView === 'dashboard' ? 'default' : 'ghost'} className="justify-start gap-3 w-full h-12" onClick={() => navigate('dashboard')}>
-                                    <LayoutDashboard className="h-5 w-5" /> Live Dashboard
+
+                            <nav className="flex flex-col gap-3 flex-1">
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-2 mb-1">Command & Analytics</p>
+                                
+                                <Button 
+                                    variant={currentView === 'dashboard' ? 'default' : 'ghost'} 
+                                    className={`justify-start gap-4 h-14 rounded-xl text-sm font-bold ${currentView === 'dashboard' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:bg-slate-50'}`}
+                                    onClick={() => handleNavigation('dashboard')}
+                                >
+                                    <LayoutDashboard size={20} /> Command Center
                                 </Button>
-                                <Button variant={currentView === 'risk' ? 'default' : 'ghost'} className="justify-start gap-3 w-full h-12" onClick={() => navigate('risk')}>
-                                    <AlertOctagon className="h-5 w-5" /> Risk Analysis
+
+                                <Button 
+                                    variant={currentView === 'pain-points' ? 'default' : 'ghost'} 
+                                    className={`justify-start gap-4 h-14 rounded-xl text-sm font-bold ${currentView === 'pain-points' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:bg-slate-50'}`} 
+                                    onClick={() => handleNavigation('pain-points')}
+                                >
+                                    <AlertOctagon size={20} /> Pain Points
                                 </Button>
-                                {/* ENABLED REPORTS BUTTON */}
-                                <Button variant={currentView === 'reports' ? 'default' : 'ghost'} className="justify-start gap-3 w-full h-12" onClick={() => navigate('reports')}>
-                                    <FileText className="h-5 w-5" /> Reports & Logs
+
+                                {/* 2. NEW NAVIGATION BUTTONS */}
+                                <Button 
+                                    variant={currentView === 'congestion' ? 'default' : 'ghost'} 
+                                    className={`justify-start gap-4 h-14 rounded-xl text-sm font-bold ${currentView === 'congestion' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:bg-slate-50'}`} 
+                                    onClick={() => handleNavigation('congestion')}
+                                >
+                                    <Navigation size={20} /> Congestion Analytics
                                 </Button>
+
+                                <Button 
+                                    variant={currentView === 'peak' ? 'default' : 'ghost'} 
+                                    className={`justify-start gap-4 h-14 rounded-xl text-sm font-bold ${currentView === 'peak' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:bg-slate-50'}`} 
+                                    onClick={() => handleNavigation('peak')}
+                                >
+                                    <Clock size={20} /> Peak Zone Intel
+                                </Button>
+
                             </nav>
-                            {/* ... Footer ... */}
+
+                            <div className="mt-auto space-y-4 pt-6 border-t border-slate-100 dark:border-slate-800">
+                                <Button 
+                                    variant="destructive" 
+                                    className="w-full h-12 rounded-xl gap-2 font-bold shadow-lg shadow-red-600/10" 
+                                    onClick={handleLogout}
+                                >
+                                    <LogOut size={18} /> Sign Out
+                                </Button>
+                                
+                                {/* --- BRANDING FOOTER --- */}
+                                <div className="text-center leading-relaxed">
+                                    <p className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                                        City of Marikina
+                                    </p>
+                                    <p className="text-[10px] font-medium text-slate-400 italic">
+                                        in partnership with <span className="text-blue-600 dark:text-blue-400 font-semibold not-italic">Nexstation</span>
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}
 
-                {/* CONTENT AREA */}
-                <main className="flex-1 relative z-0 h-full">
+                {/* 3. DYNAMIC CONTENT AREA: Add the new views here */}
+                <main className="flex-1 relative z-0 h-full w-full overflow-hidden">
                     {currentView === 'dashboard' && <LGUDashboard />}
-                    {currentView === 'reports' && <ReportsView />} {/* NEW VIEW */}
-                    
-                    {currentView === 'risk' && (
-                        // (Same Risk View Code as previous prompt...)
-                        <div className="h-full overflow-y-auto p-6 bg-slate-50 dark:bg-slate-950">
-                             {/* ... paste the Risk Analysis Code from previous prompt here ... */}
-                             <div className="max-w-3xl mx-auto space-y-6">
-                                <div className="flex items-center gap-3 mb-6">
-                                    <div className="p-3 bg-red-100 rounded-lg text-red-600">
-                                        <AlertOctagon className="h-8 w-8" />
-                                    </div>
-                                    <div>
-                                        <h2 className="text-2xl font-bold">Risk Analysis Report</h2>
-                                        <p className="text-muted-foreground">Real-time incident priority queue</p>
-                                    </div>
-                                </div>
-                                {/* Content... */}
-                            </div>
-                        </div>
-                    )}
+                    {currentView === 'pain-points' && <CommuterPainPoints />}
+                    {currentView === 'congestion' && <CongestionAnalytics />}
+                    {currentView === 'peak' && <PeakZoneAnalysis />}
+                    {currentView === 'reports' && <ReportsView />}
                 </main>
+
             </div>
         </div>
     );

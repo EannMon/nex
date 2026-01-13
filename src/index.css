@@ -77,21 +77,61 @@
 /* ... existing tailwind imports ... */
 
 /* CUSTOM LEAFLET TOOLTIP (The White Text Box) */
+/* ... tailwind imports ... */
+
+/* DYNAMIC GLASS TOOLTIP (HUD Style) */
 .glass-tooltip {
-  background-color: rgba(255, 255, 255, 0.75) !important;
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(0,0,0,0.1);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  color: #0f172a; /* Slate 900 */
-  font-weight: 700;
-  font-size: 0.7rem;
-  padding: 4px 8px;
-  border-radius: 6px;
-  text-align: center;
-  line-height: 1.1;
+  background: rgba(15, 23, 42, 0.65) !important; /* Darker, sleek slate background */
+  backdrop-filter: blur(16px) !important;        /* heavy blur */
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15);   /* Subtle border */
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);   /* Deep shadow */
+  border-radius: 16px;
+  padding: 0 !important; /* Reset padding, we handle it inside */
+  color: white;
+  transition: all 0.3s ease;
 }
 
-/* Hide the little pointer triangle */
+/* Internal Container for padding */
+.glass-content {
+  padding: 6px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Typography */
+.glass-label {
+  font-size: 0.55rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.7);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.glass-value {
+  font-family: 'Inter', sans-serif;
+  font-weight: 800;
+  line-height: 1;
+  background: linear-gradient(to bottom, #ffffff, #e2e8f0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+.glass-sub {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  font-size: 0.6rem;
+  color: #94a3b8;
+  width: 100%;
+  text-align: center;
+}
+
+/* Hide leaflet arrow */
 .leaflet-tooltip-left:before, 
 .leaflet-tooltip-right:before, 
 .leaflet-tooltip-bottom:before, 
