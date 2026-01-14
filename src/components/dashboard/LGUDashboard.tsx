@@ -12,39 +12,36 @@ import { Badge } from "@/components/ui/badge";
 // Icons
 import { 
     Activity, Users, Navigation, Clock, Loader2,
-    Info, AlertTriangle, AlertOctagon
+    Info, AlertTriangle, AlertOctagon, Plus, X
 } from "lucide-react";
 
-// --- 1. CONFIGURATION ---
-const WEATHER_API_KEY = "YOUR_OPENWEATHERMAP_API_KEY_HERE"; 
-const CITY_NAME = "Marikina,PH";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import type { PainPoint } from "@/components/MainLayout";
 
 const MARIKINA_BOUNDS: L.LatLngBoundsExpression = [
     [14.6050, 121.0750], 
     [14.6750, 121.1450]
 ];
 
-// --- CSS FOR MAP STYLING (Responsive Tooltips + Glow) ---
+// --- CSS FOR MAP STYLING ---
 const MAP_STYLES = `
-  /* Selected Item Glow */
   .map-selected {
     filter: drop-shadow(0 0 8px rgba(255, 255, 255, 1));
     transition: all 0.3s ease;
     z-index: 1000 !important;
   }
 
-  /* Responsive Glass Tooltip Container */
   .leaflet-tooltip.glass-tooltip {
     background: rgba(255, 255, 255, 0.90);
     border: 1px solid rgba(255, 255, 255, 0.5);
     backdrop-filter: blur(4px);
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     border-radius: 6px;
-    padding: 2px 6px !important; /* Compact padding for mobile */
+    padding: 2px 6px !important;
     white-space: nowrap;
   }
 
-  /* Remove the default Leaflet triangle pointer to save space */
   .leaflet-tooltip-top:before, 
   .leaflet-tooltip-bottom:before, 
   .leaflet-tooltip-left:before, 
@@ -52,7 +49,6 @@ const MAP_STYLES = `
     border: none !important; 
   }
 
-  /* Desktop Scaling: Increase padding slightly on larger screens */
   @media (min-width: 768px) {
     .leaflet-tooltip.glass-tooltip {
         padding: 4px 8px !important;
@@ -77,23 +73,6 @@ const segmentConfigs = [
     { id: "LILAC", name: "Lilac Street", color: "#ef4444", status: "Heavy/Parking", count: "12 kph", points: [[14.6390, 121.1150], [14.6450, 121.1300]] },
     { id: "BAYAN-BAYANAN", name: "Bayan-bayanan Ave", color: "#f59e0b", status: "Moderate", count: "15 kph", points: [[14.6515, 121.1040], [14.6400, 121.1080]] },
     { id: "FORTUNE", name: "Fortune Ave", color: "#22c55e", status: "Moving", count: "25 kph", points: [[14.6610, 121.1150], [14.6720, 121.1250]] }
-];
-
-const marikinaHeatmaps = [
-    { id: 1, name: "Marikina Bayan", lat: 14.6335, lng: 121.0955, count: 520, wait: 45, radius: 675, action: "Dispatch Traffic Enforcers" },
-    { id: 2, name: "Riverbanks Center", lat: 14.6300, lng: 121.0880, count: 410, wait: 35, radius: 525, action: "Monitor Queue Length" },
-    { id: 3, name: "Barangka Flyover", lat: 14.6285, lng: 121.0825, count: 440, wait: 40, radius: 600, action: "Check Merging Lane" },
-    { id: 4, name: "LRT-2 Santolan Station", lat: 14.6220, lng: 121.0850, count: 480, wait: 32, radius: 480, action: "Coord with LRTA" },
-    { id: 5, name: "Concepcion Uno", lat: 14.6515, lng: 121.1040, count: 390, wait: 28, radius: 420, action: "Clear Market Entrance" },
-    { id: 6, name: "SM Marikina Area", lat: 14.6250, lng: 121.0910, count: 310, wait: 25, radius: 375, action: "Monitor Mall Traffic" },
-    { id: 7, name: "Marcos Hwy - Gil Fernando", lat: 14.6232, lng: 121.1000, count: 350, wait: 22, radius: 330, action: "Adjust Signal Timing" },
-    { id: 8, name: "Tumana Bridge Access", lat: 14.6480, lng: 121.0995, count: 210, wait: 18, radius: 270, action: "Flood Watch Required" },
-    { id: 9, name: "Parang-Fortune Jct", lat: 14.6610, lng: 121.1150, count: 220, wait: 15, radius: 225, action: "School Zone Alert" },
-    { id: 10, name: "Kalumpang (J.P. Rizal)", lat: 14.6200, lng: 121.0920, count: 190, wait: 14, radius: 210, action: "No Action Needed" },
-    { id: 11, name: "Marikina Heights (NGI)", lat: 14.6465, lng: 121.1120, count: 250, wait: 12, radius: 180, action: "Monitor Tricycle Terminal" },
-    { id: 12, name: "Concepcion Dos (Lilac St)", lat: 14.6390, lng: 121.1150, count: 180, wait: 9, radius: 135, action: "Check Illegal Parking" },
-    { id: 13, name: "Fortune Barangay Hall", lat: 14.6680, lng: 121.1230, count: 140, wait: 7, radius: 105, action: "No Action Needed" },
-    { id: 14, name: "SSS Village (Panorama)", lat: 14.6360, lng: 121.1250, count: 130, wait: 5, radius: 75, action: "No Action Needed" }
 ];
 
 const peakRiskZones = [
@@ -124,17 +103,30 @@ function MapEvents({ setZoom, onMapClick }: { setZoom: (z: number) => void, onMa
     return null;
 }
 
-export default function LGUDashboard() {
+export default function LGUDashboard({ 
+    painPoints = [], 
+    onAddPainPoint, 
+    onRemovePainPoint 
+}: { 
+    painPoints?: PainPoint[]; 
+    onAddPainPoint?: (point: Omit<PainPoint, "id">) => void;
+    onRemovePainPoint?: (id: number) => void;
+}) {
     const [activeTab, setActiveTab] = useState<"pain" | "congestion" | "peak">("pain");
-    const [zoomLevel, setZoomLevel] = useState(14);
-    const [weather, setWeather] = useState({ temp: 31, main: "Clear", loading: true });
     const [roadPaths, setRoadPaths] = useState<any[]>([]);
     const [loadingRoads, setLoadingRoads] = useState(true);
     const [isMobile, setIsMobile] = useState(false);
-
     const [selectedItem, setSelectedItem] = useState<any | null>(null);
+    const [showAddForm, setShowAddForm] = useState(false);
+    
+    const [formData, setFormData] = useState({
+        area: "",
+        type: "Passenger Surge",
+        level: "Moderate" as const,
+        paxCount: 100,
+        wait: 15,
+    });
 
-    // Track Screen Size for Responsive Logic
     useEffect(() => {
         const checkMobile = () => setIsMobile(window.innerWidth < 768);
         checkMobile();
@@ -143,21 +135,7 @@ export default function LGUDashboard() {
     }, []);
 
     useEffect(() => {
-        const fetchWeather = async () => {
-            try {
-                const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${CITY_NAME}&units=metric&appid=${WEATHER_API_KEY}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    setWeather({ temp: Math.round(data.main.temp), main: data.weather[0].main, loading: false });
-                } else { setWeather({ temp: 31, main: "Clouds", loading: false }); }
-            } catch { setWeather({ temp: 31, main: "Clouds", loading: false }); }
-        };
-        fetchWeather();
-    }, []);
-
-    useEffect(() => {
         const fetchRoutes = async () => {
-            // Check if routes are already cached in localStorage
             const cachedRoutes = localStorage.getItem('osrm_routes_cache');
             if (cachedRoutes) {
                 try {
@@ -180,7 +158,6 @@ export default function LGUDashboard() {
                 } catch { return { ...seg, path: seg.points }; }
             }));
             setRoadPaths(fetched);
-            // Cache the routes in localStorage
             localStorage.setItem('osrm_routes_cache', JSON.stringify(fetched));
             setLoadingRoads(false);
         };
@@ -193,21 +170,46 @@ export default function LGUDashboard() {
         setSelectedItem({ ...item, dataType: type });
     };
 
+    const handleAddPainPoint = () => {
+        if (!formData.area.trim() || !onAddPainPoint) return;
+
+        // FIXED: Removed 'count' property as it was causing a type error
+        // The PainPoint interface uses 'paxCount' instead.
+        onAddPainPoint({
+            area: formData.area,
+            type: formData.type,
+            level: formData.level,
+            paxCount: formData.paxCount,
+            wait: formData.wait,
+            trend: "New",
+            affected: "To be determined",
+            status: "Monitoring",
+            lat: 14.6330 + (Math.random() - 0.5) * 0.05,
+            lng: 121.0980 + (Math.random() - 0.5) * 0.05,
+            radius: 400,
+            action: "Monitor situation",
+        });
+
+        setFormData({
+            area: "",
+            type: "Passenger Surge",
+            level: "Moderate",
+            paxCount: 100,
+            wait: 15,
+        });
+        setShowAddForm(false);
+    };
+
     return (
-        <div className="flex flex-col h-screen w-full relative bg-slate-100 overflow-hidden font-sans text-slate-900">
-            {/* INJECT STYLES FOR GLOW EFFECT & RESPONSIVE TOOLTIPS */}
+        <div className="flex flex-col h-full w-full relative bg-slate-100 overflow-hidden font-sans text-slate-900">
             <style>{MAP_STYLES}</style>
             
             <div className="flex-1 relative z-0">
                 <MapContainer center={[14.6330, 121.0980]} zoom={14} zoomControl={false} maxBounds={MARIKINA_BOUNDS} maxBoundsViscosity={1.0} minZoom={13} style={{ height: "100%", width: "100%" }}>
                     <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
-                    
-                    {/* HIDE ZOOM ON MOBILE */}
                     {!isMobile && <ZoomControl position="bottomleft" />}
-                    
-                    <MapEvents setZoom={setZoomLevel} onMapClick={clearSelection} />
+                    <MapEvents setZoom={() => {}} onMapClick={clearSelection} />
 
-                    {/* --- RENDER ROADS (LINES) --- */}
                     {!loadingRoads && roadPaths.map((r) => {
                         const isSelected = selectedItem?.id === r.id;
                         return (
@@ -240,16 +242,15 @@ export default function LGUDashboard() {
                         );
                     })}
                     
-                    {/* --- RENDER HEATMAPS (CIRCLES) --- */}
-                    {activeTab === 'pain' && marikinaHeatmaps.map((p) => {
-                        const dynamicColor = getHeatmapColorByWait(p.wait);
+                    {activeTab === 'pain' && painPoints.map((p) => {
+                        const dynamicColor = getHeatmapColorByWait(p.wait || 0);
                         const isSelected = selectedItem?.id === p.id;
 
                         return (
                             <Circle 
                                 key={p.id} 
-                                center={[p.lat, p.lng]} 
-                                radius={p.radius}
+                                center={[p.lat || 14.6330, p.lng || 121.0980]} 
+                                radius={p.radius || 500}
                                 eventHandlers={{
                                     click: (e) => {
                                         L.DomEvent.stopPropagation(e);
@@ -268,14 +269,13 @@ export default function LGUDashboard() {
                                 <Tooltip permanent direction="center" className="glass-tooltip">
                                     <div className="flex flex-col items-center leading-none">
                                         <span className="font-black text-[7px] md:text-[8px] uppercase tracking-wider" style={{ color: dynamicColor }}>WAIT</span>
-                                        <span className="font-black text-[9px] md:text-xs text-slate-800">{p.wait}m</span>
+                                        <span className="font-black text-[9px] md:text-xs text-slate-800">{p.wait || 0}m</span>
                                     </div>
                                 </Tooltip>
                             </Circle>
                         );
                     })}
 
-                    {/* --- RENDER RISK ZONES (DASHED CIRCLES) --- */}
                     {activeTab === 'peak' && peakRiskZones.map((z) => {
                          const isSelected = selectedItem?.id === z.id;
                          return (
@@ -310,8 +310,6 @@ export default function LGUDashboard() {
                     })}
                 </MapContainer>
 
-                {/* --- DYNAMIC INFO CARD --- */}
-                {/* RESPONSIVE UPDATE: w-auto (auto width) + left-4 right-4 (strech across) on mobile. Fixed w-72 on Desktop. */}
                 {selectedItem && (
                     <div className="absolute top-20 left-4 right-4 md:left-auto md:top-auto md:bottom-6 md:right-4 md:w-72 z-[600] animate-in slide-in-from-right-4 duration-300">
                         <Card className="bg-white/95 backdrop-blur-md shadow-2xl border-none overflow-hidden">
@@ -397,9 +395,6 @@ export default function LGUDashboard() {
                     </div>
                 )}
 
-
-                {/* HEADER - RESPONSIVE */}
-                {/* Fixed width on Desktop, Full Width with margins on Mobile */}
                 <div className="absolute top-4 left-4 right-4 md:right-auto md:w-[240px] z-[500]">
                     <Card className="bg-white/95 backdrop-blur-md shadow-2xl border-none">
                         <CardHeader className="p-3">
@@ -420,29 +415,108 @@ export default function LGUDashboard() {
                 </div>
             </div>
 
-            {/* LIST VIEW (BOTTOM) - RESPONSIVE HEIGHT & FULL WIDTH */}
-            {/* NO MAX-WIDTHS HERE - Takes full screen width */}
             <div className="z-[500] bg-white border-t h-[40%] md:h-[35%] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.1)] w-full">
-                <div className="p-3 border-b flex justify-center bg-slate-50">
+                <div className="p-3 border-b flex justify-between items-center bg-slate-50">
                     <div className="grid grid-cols-3 gap-2 w-full bg-slate-200 p-1 rounded-xl">
                         <button onClick={() => setActiveTab('pain')} className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] md:text-xs font-black transition-all ${activeTab === 'pain' ? 'bg-white shadow-md text-red-600' : 'text-slate-500 hover:bg-white/50'}`}><Users size={16} /> <span>PAIN POINTS</span></button>
                         <button onClick={() => setActiveTab('congestion')} className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] md:text-xs font-black transition-all ${activeTab === 'congestion' ? 'bg-white shadow-md text-indigo-600' : 'text-slate-500 hover:bg-white/50'}`}><Navigation size={16} /> <span>CONGESTION</span></button>
                         <button onClick={() => setActiveTab('peak')} className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-[10px] md:text-xs font-black transition-all ${activeTab === 'peak' ? 'bg-white shadow-md text-amber-600' : 'text-slate-500 hover:bg-white/50'}`}><Clock size={16} /> <span>PEAK ZONES</span></button>
                     </div>
+                    {activeTab === 'pain' && onAddPainPoint && (
+                        <Button 
+                            size="sm" 
+                            onClick={() => setShowAddForm(!showAddForm)}
+                            className="ml-3 bg-blue-600 hover:bg-blue-700 text-white flex-shrink-0"
+                        >
+                            {showAddForm ? <X size={16} /> : <Plus size={16} />}
+                        </Button>
+                    )}
                 </div>
 
+                {showAddForm && activeTab === 'pain' && (
+                    <div className="p-4 bg-blue-50 border-b border-blue-100 flex gap-2 flex-wrap items-end">
+                        <div className="flex-1 min-w-[150px]">
+                            <label className="text-xs font-bold text-slate-700 block mb-1">Area Name</label>
+                            <Input 
+                                placeholder="e.g., Shoe Avenue"
+                                value={formData.area}
+                                onChange={(e) => setFormData({...formData, area: e.target.value})}
+                                className="h-8 text-xs"
+                            />
+                        </div>
+                        <div className="w-24">
+                            <label className="text-xs font-bold text-slate-700 block mb-1">Pax Count</label>
+                            <Input 
+                                type="number"
+                                placeholder="100"
+                                value={formData.paxCount}
+                                onChange={(e) => setFormData({...formData, paxCount: parseInt(e.target.value) || 0})}
+                                className="h-8 text-xs"
+                            />
+                        </div>
+                        <div className="w-20">
+                            <label className="text-xs font-bold text-slate-700 block mb-1">Wait (m)</label>
+                            <Input 
+                                type="number"
+                                placeholder="15"
+                                value={formData.wait}
+                                onChange={(e) => setFormData({...formData, wait: parseInt(e.target.value) || 0})}
+                                className="h-8 text-xs"
+                            />
+                        </div>
+                        <select 
+                            value={formData.level}
+                            onChange={(e) => setFormData({...formData, level: e.target.value as any})}
+                            className="h-8 text-xs px-2 rounded border border-slate-200"
+                        >
+                            <option value="Low">Low</option>
+                            <option value="Moderate">Moderate</option>
+                            <option value="High">High</option>
+                            <option value="Critical">Critical</option>
+                        </select>
+                        <Button 
+                            size="sm"
+                            onClick={handleAddPainPoint}
+                            className="bg-green-600 hover:bg-green-700 text-white h-8"
+                        >
+                            Add
+                        </Button>
+                    </div>
+                )}
+
                 <div className="flex-1 overflow-y-auto p-4 w-full">
-                    {activeTab === 'pain' && marikinaHeatmaps.map(item => (
+                    {activeTab === 'pain' && painPoints.map(item => (
                         <div 
                             key={item.id} 
                             onClick={() => handleSelect(item, 'heatmap')}
                             className={`flex items-center justify-between p-3 bg-white rounded-xl border mb-2 shadow-sm cursor-pointer transition-all ${selectedItem?.id === item.id ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
                         >
-                            <div className="flex items-center gap-4">
-                                <div className="h-10 w-10 rounded-full bg-red-50 flex items-center justify-center text-red-600 font-black text-[10px] border border-red-100">{item.wait}m</div>
-                                <div><div className="font-bold text-sm text-slate-800">{item.name}</div><div className="text-[9px] text-slate-400 font-bold uppercase mt-1">Passenger Surge</div></div>
+                            <div className="flex items-center gap-4 flex-1">
+                                <div className="h-10 w-10 rounded-full bg-red-50 flex items-center justify-center text-red-600 font-black text-[10px] border border-red-100">{item.wait || 0}m</div>
+                                <div className="flex-1">
+                                    <div className="font-bold text-sm text-slate-800">{item.area}</div>
+                                    <div className="text-[9px] text-slate-400 font-bold uppercase mt-1">{item.type}</div>
+                                </div>
                             </div>
-                            <div className="text-right"><div className="text-lg font-black text-slate-900 leading-none">{item.count}</div><span className={`text-[8px] font-bold uppercase italic ${item.wait > 30 ? 'text-red-500' : 'text-amber-500'}`}>Wait Label: {item.wait > 30 ? 'Critical' : 'Moderate'}</span></div>
+                            <div className="flex items-center gap-2">
+                                <div className="text-right">
+                                    <div className="text-lg font-black text-slate-900 leading-none">{item.paxCount}</div>
+                                    <span className={`text-[8px] font-bold uppercase italic ${(item.wait || 0) > 30 ? 'text-red-500' : 'text-amber-500'}`}>{item.level}</span>
+                                </div>
+                                {onRemovePainPoint && (
+                                    <Button 
+                                        size="sm" 
+                                        variant="ghost"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onRemovePainPoint(item.id);
+                                        }}
+                                        className="h-6 w-6 p-0 text-slate-400 hover:text-red-600"
+                                    >
+                                        <X size={14} />
+                                    </Button>
+                                )}
+                            </div>
                         </div>
                     ))}
                     {activeTab === 'congestion' && roadPaths.map(road => (

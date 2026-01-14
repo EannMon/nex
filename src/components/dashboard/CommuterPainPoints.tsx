@@ -1,16 +1,16 @@
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, Clock, TrendingUp, MapPin, Zap, Info, ArrowUpRight, Timer, Activity } from "lucide-react";
+import { Users, Clock, MapPin, Zap, Info, ArrowUpRight, Timer, Activity, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { PainPoint } from "@/components/MainLayout";
 
-// MOCK DATA: Comprehensive Commuter Pain Points
-const painPoints = [
-    { id: 1, area: "Marikina Bayan", type: "Passenger Surge", level: "Critical", trend: "Rising", affected: "UV Express / Jeepney Terminal", status: "Wait time > 45 mins", paxCount: 520 },
-    { id: 2, area: "LRT-2 Santolan", type: "Intermodal Bottleneck", level: "High", trend: "Stable", affected: "Eastbound Loading Zone", status: "Heavy Commuter Volume", paxCount: 480 },
-    { id: 3, area: "Riverbanks Mall", type: "Queue Spillover", level: "Moderate", trend: "Decreasing", affected: "Public Transport Hub", status: "Normalizing by 8 PM", paxCount: 245 },
-    { id: 4, area: "Concepcion Church", type: "Loading Violation", level: "Low", trend: "Stable", affected: "Main Arterial Road", status: "Minor congestion", paxCount: 150 },
-];
-
-export default function CommuterPainPoints() {
+export default function CommuterPainPoints({ 
+    painPoints = [], 
+    onRemovePainPoint 
+}: { 
+    painPoints?: PainPoint[]; 
+    onRemovePainPoint?: (id: number) => void;
+}) {
     return (
         <div className="h-full overflow-y-auto p-4 md:p-8 bg-slate-50 dark:bg-slate-950">
             <div className="max-w-5xl mx-auto space-y-8">
@@ -32,18 +32,28 @@ export default function CommuterPainPoints() {
                 {/* VISUALIZATION CARDS */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {painPoints.map((point) => (
-                        <Card key={point.id} className={`border-t-4 shadow-sm hover:shadow-md transition-all ${
+                        <Card key={point.id} className={`border-t-4 shadow-sm hover:shadow-md transition-all relative ${
                             point.level === 'Critical' ? 'border-t-red-600' : 
                             point.level === 'High' ? 'border-t-orange-500' : 
-                            'border-t-blue-500'
+                            point.level === 'Moderate' ? 'border-t-blue-500' : 'border-t-green-500'
                         }`}>
                             <CardHeader className="p-4 pb-2">
                                 <div className="flex justify-between items-start">
                                     <Badge variant={point.level === 'Critical' ? 'destructive' : 'secondary'} className="text-[10px] font-bold">
                                         {point.level.toUpperCase()}
                                     </Badge>
-                                    <Clock className={`h-4 w-4 ${point.level === 'Critical' ? 'text-red-500' : 'text-slate-400'}`} />
+                                    {onRemovePainPoint && (
+                                        <Button 
+                                            size="sm" 
+                                            variant="ghost"
+                                            onClick={() => onRemovePainPoint(point.id)}
+                                            className="h-5 w-5 p-0 text-slate-400 hover:text-red-600"
+                                        >
+                                            <X size={12} />
+                                        </Button>
+                                    )}
                                 </div>
+                                <Clock className={`h-4 w-4 mt-2 ${point.level === 'Critical' ? 'text-red-500' : 'text-slate-400'}`} />
                                 <CardTitle className="text-lg font-bold mt-2">{point.area}</CardTitle>
                                 <CardDescription className="text-xs font-semibold text-slate-600 dark:text-slate-400">{point.type}</CardDescription>
                             </CardHeader>
@@ -73,13 +83,13 @@ export default function CommuterPainPoints() {
                     </CardHeader>
                     <CardContent className="p-0 bg-white dark:bg-slate-900">
                         {painPoints.map((point, i) => (
-                            <div key={i} className={`p-4 md:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 ${i !== painPoints.length - 1 ? 'border-b border-slate-100 dark:border-slate-800' : ''}`}>
-                                <div className="flex items-start gap-4">
+                            <div key={i} className={`p-4 md:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 relative ${i !== painPoints.length - 1 ? 'border-b border-slate-100 dark:border-slate-800' : ''}`}>
+                                <div className="flex items-start gap-4 flex-1">
                                     <div className="flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-lg p-2 min-w-[60px]">
                                         <span className="text-xs font-bold text-slate-500 uppercase">PAX</span>
                                         <span className="text-lg font-black text-slate-900 dark:text-slate-100">{point.paxCount}</span>
                                     </div>
-                                    <div>
+                                    <div className="flex-1">
                                         <div className="font-bold text-slate-800 dark:text-slate-100 text-base flex items-center gap-2">
                                             {point.area}
                                             {point.trend === 'Rising' && <ArrowUpRight className="h-4 w-4 text-red-500" />}
@@ -94,8 +104,8 @@ export default function CommuterPainPoints() {
                                 <div className="flex flex-col gap-1.5 w-full md:w-1/3">
                                     <div className="flex justify-between text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-tighter">
                                         <span>Terminal Saturation</span>
-                                        <span className={point.level === 'Critical' ? 'text-red-600' : 'text-blue-600'}>
-                                            {point.level === 'Critical' ? 'High Load' : 'Manageable'}
+                                        <span className={point.level === 'Critical' ? 'text-red-600' : point.level === 'High' ? 'text-orange-600' : 'text-blue-600'}>
+                                            {point.level === 'Critical' ? 'High Load' : point.level === 'High' ? 'Moderate' : 'Manageable'}
                                         </span>
                                     </div>
                                     <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700">
@@ -103,15 +113,26 @@ export default function CommuterPainPoints() {
                                             className={`h-full rounded-full transition-all duration-1000 ${
                                                 point.level === 'Critical' ? 'bg-red-600' : 
                                                 point.level === 'High' ? 'bg-orange-500' : 
-                                                'bg-blue-600'
+                                                point.level === 'Moderate' ? 'bg-blue-600' :
+                                                'bg-green-600'
                                             }`} 
-                                            style={{ width: point.level === 'Critical' ? '88%' : point.level === 'High' ? '65%' : '30%' }}
+                                            style={{ width: point.level === 'Critical' ? '88%' : point.level === 'High' ? '65%' : point.level === 'Moderate' ? '40%' : '20%' }}
                                         />
                                     </div>
                                     <div className="text-[10px] text-slate-400 italic">
-                                        Recommendation: Dispatch additional transport units
+                                        {point.action || "Recommendation: Monitor situation"}
                                     </div>
                                 </div>
+                                {onRemovePainPoint && (
+                                    <Button 
+                                        size="sm" 
+                                        variant="ghost"
+                                        onClick={() => onRemovePainPoint(point.id)}
+                                        className="h-6 w-6 p-0 text-slate-400 hover:text-red-600 absolute top-4 right-4"
+                                    >
+                                        <X size={14} />
+                                    </Button>
+                                )}
                             </div>
                         ))}
                     </CardContent>

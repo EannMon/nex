@@ -10,12 +10,28 @@ import type { User } from "@/data/users";
 
 type ViewState = "dashboard" | "pain-points" | "reports" | "congestion" | "peak";
 
+export interface PainPoint {
+    id: number;
+    area: string;
+    type: string;
+    level: "Critical" | "High" | "Moderate" | "Low";
+    trend: string;
+    affected: string;
+    status: string;
+    paxCount: number;
+    lat: number;
+    lng: number;
+    radius: number;
+    wait: number;
+    action: string;
+}
+
 interface MainLayoutProps {
     user: User;
     onLogout: () => void;
 }
 
-const viewConfig: Record<ViewState, { label: string; icon: React.ReactNode; component: React.ComponentType }> = {
+const viewConfig: Record<ViewState, { label: string; icon: React.ReactNode; component: React.ComponentType<any> }> = {
     dashboard: { label: "Command Center", icon: <LayoutDashboard size={20} />, component: LGUDashboard },
     "pain-points": { label: "Pain Points", icon: <AlertOctagon size={20} />, component: CommuterPainPoints },
     congestion: { label: "Congestion Analytics", icon: <Navigation size={20} />, component: CongestionAnalytics },
@@ -23,9 +39,79 @@ const viewConfig: Record<ViewState, { label: string; icon: React.ReactNode; comp
     reports: { label: "Incident Reports", icon: <FileText size={20} />, component: ReportsView },
 };
 
+// Merged Data: This serves as both the Heatmap data source AND the Pain Points list
+const defaultPainPoints: PainPoint[] = [
+    { 
+        id: 1, area: "Marikina Bayan", lat: 14.6335, lng: 121.0955, paxCount: 520, wait: 45, radius: 675, 
+        type: "Passenger Surge", level: "Critical", trend: "Rising", affected: "UV Express / Jeepney Terminal", status: "Wait > 45 mins", action: "Dispatch Traffic Enforcers" 
+    },
+    { 
+        id: 2, area: "Riverbanks Center", lat: 14.6300, lng: 121.0880, paxCount: 410, wait: 35, radius: 525, 
+        type: "Queue Spillover", level: "Critical", trend: "Rising", affected: "Public Transport Hub", status: "Wait > 35 mins", action: "Monitor Queue Length" 
+    },
+    { 
+        id: 3, area: "Barangka Flyover", lat: 14.6285, lng: 121.0825, paxCount: 440, wait: 40, radius: 600, 
+        type: "Chokepoint", level: "Critical", trend: "Stable", affected: "Merging Lane", status: "Traffic Buildup", action: "Check Merging Lane" 
+    },
+    { 
+        id: 4, area: "LRT-2 Santolan Station", lat: 14.6220, lng: 121.0850, paxCount: 480, wait: 32, radius: 480, 
+        type: "Intermodal Bottleneck", level: "High", trend: "Stable", affected: "Eastbound Loading Zone", status: "Heavy Volume", action: "Coord with LRTA" 
+    },
+    { 
+        id: 5, area: "Concepcion Uno", lat: 14.6515, lng: 121.1040, paxCount: 390, wait: 28, radius: 420, 
+        type: "Loading Violation", level: "High", trend: "Stable", affected: "Market Area", status: "Congested", action: "Clear Market Entrance" 
+    },
+    { 
+        id: 6, area: "SM Marikina Area", lat: 14.6250, lng: 121.0910, paxCount: 310, wait: 25, radius: 375, 
+        type: "Mall Traffic", level: "Moderate", trend: "Decreasing", affected: "Transport Terminal", status: "Moderate Queue", action: "Monitor Mall Traffic" 
+    },
+    { 
+        id: 7, area: "Marcos Hwy - Gil Fernando", lat: 14.6232, lng: 121.1000, paxCount: 350, wait: 22, radius: 330, 
+        type: "Intersection Block", level: "Moderate", trend: "Stable", affected: "Major Intersection", status: "Signal Timing Issue", action: "Adjust Signal Timing" 
+    },
+    { 
+        id: 8, area: "Tumana Bridge Access", lat: 14.6480, lng: 121.0995, paxCount: 210, wait: 18, radius: 270, 
+        type: "Narrow Access", level: "Moderate", trend: "Rising", affected: "Bridge Entry", status: "Slow Moving", action: "Flood Watch Required" 
+    },
+    { 
+        id: 9, area: "Parang-Fortune Jct", lat: 14.6610, lng: 121.1150, paxCount: 220, wait: 15, radius: 225, 
+        type: "School Zone", level: "Moderate", trend: "Decreasing", affected: "School Exits", status: "Student Surge", action: "School Zone Alert" 
+    },
+    { 
+        id: 10, area: "Kalumpang (J.P. Rizal)", lat: 14.6200, lng: 121.0920, paxCount: 190, wait: 14, radius: 210, 
+        type: "Flowing", level: "Low", trend: "Stable", affected: "Local Road", status: "Normal", action: "No Action Needed" 
+    },
+    { 
+        id: 11, area: "Marikina Heights (NGI)", lat: 14.6465, lng: 121.1120, paxCount: 250, wait: 12, radius: 180, 
+        type: "Terminal Queue", level: "Low", trend: "Stable", affected: "Tricycle/Jeep Terminal", status: "Organized", action: "Monitor Tricycle Terminal" 
+    },
+    { 
+        id: 12, area: "Concepcion Dos (Lilac St)", lat: 14.6390, lng: 121.1150, paxCount: 180, wait: 9, radius: 135, 
+        type: "Commercial Strip", level: "Low", trend: "Stable", affected: "Dining Area", status: "Light Traffic", action: "Check Illegal Parking" 
+    },
+    { 
+        id: 13, area: "Fortune Barangay Hall", lat: 14.6680, lng: 121.1230, paxCount: 140, wait: 7, radius: 105, 
+        type: "Local Traffic", level: "Low", trend: "Decreasing", affected: "Barangay Road", status: "Clear", action: "No Action Needed" 
+    },
+    { 
+        id: 14, area: "SSS Village (Panorama)", lat: 14.6360, lng: 121.1250, paxCount: 130, wait: 5, radius: 75, 
+        type: "Residential Access", level: "Low", trend: "Stable", affected: "Gate Entrance", status: "Clear", action: "No Action Needed" 
+    }
+];
+
 export default function MainLayout({ user, onLogout }: MainLayoutProps) {
     const [currentView, setCurrentView] = useState<ViewState>("dashboard");
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [painPoints, setPainPoints] = useState<PainPoint[]>(defaultPainPoints);
+
+    const handleAddPainPoint = (newPainPoint: Omit<PainPoint, "id">) => {
+        const newId = Math.max(...painPoints.map(p => p.id), 0) + 1;
+        setPainPoints([...painPoints, { ...newPainPoint, id: newId }]);
+    };
+
+    const handleRemovePainPoint = (id: number) => {
+        setPainPoints(painPoints.filter(p => p.id !== id));
+    };
 
     const handleNavigation = (view: ViewState) => {
         setCurrentView(view);
@@ -38,6 +124,22 @@ export default function MainLayout({ user, onLogout }: MainLayoutProps) {
     };
 
     const CurrentComponent = viewConfig[currentView].component;
+
+    const getComponentProps = () => {
+        if (currentView === "dashboard") {
+            return { painPoints, onAddPainPoint: handleAddPainPoint, onRemovePainPoint: handleRemovePainPoint };
+        }
+        if (currentView === "pain-points") {
+            return { painPoints, onRemovePainPoint: handleRemovePainPoint };
+        }
+        if (currentView === "congestion") {
+            return { painPoints, onRemovePainPoint: handleRemovePainPoint };
+        }
+        if (currentView === "peak") {
+            return { painPoints, onRemovePainPoint: handleRemovePainPoint };
+        }
+        return {};
+    };
 
     return (
         <div className="h-screen w-full bg-background flex flex-col overflow-hidden">
@@ -64,7 +166,7 @@ export default function MainLayout({ user, onLogout }: MainLayoutProps) {
 
             {/* Main Content */}
             <main className="flex-1 overflow-hidden">
-                <CurrentComponent />
+                <CurrentComponent {...getComponentProps()} />
             </main>
 
             {/* Navigation Menu Overlay */}
