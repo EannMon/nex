@@ -182,30 +182,12 @@
     --radius-4xl: calc(var(--radius) + 16px);
 }
 
-/* Mobile viewport constraints */
-#root {
-    width: 430px;
-    height: 95vh;
-    margin: 0 auto;
-    overflow: hidden;
-    position: relative;
-    box-shadow: 0 0 50px rgba(0, 0, 0, 0.15);
-}
-
-body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    background: #1a1a1a;
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
     }
   body {
-    @apply font-sans text-foreground;
+    @apply font-sans bg-background text-foreground;
     }
   html {
     @apply font-sans;

@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck } from "lucide-react";
 
 export default function LoginForm({ onLogin }: { onLogin: (user: any) => void }) {
     const [formData, setFormData] = useState({
@@ -26,7 +25,7 @@ export default function LoginForm({ onLogin }: { onLogin: (user: any) => void })
         if (formData.email === "admin@marikina.gov.ph" && formData.password === "Marikina2026") {
             onLogin({ name: "LGU Admin", role: "lgu" });
         } else {
-            setError("Invalid official credentials.");
+            setError("Invalid email, password, or account type. Please try again.");
         }
     };
 
@@ -35,32 +34,29 @@ export default function LoginForm({ onLogin }: { onLogin: (user: any) => void })
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
-            <Card className="w-full max-w-sm shadow-xl border-t-4 border-t-blue-700">
-                <CardHeader className="text-center space-y-1">
-                    <div className="flex justify-center mb-4">
-                        <div className="h-14 w-14 bg-blue-700 rounded-full flex items-center justify-center text-white shadow-lg">
-                            <ShieldCheck size={28} />
-                        </div>
-                    </div>
-                    <CardTitle className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                        Marikina Mobility
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
+            <Card className="w-full max-w-md">
+                <CardHeader>
+                    <CardTitle className="text-lg text-center">
+                        LGU Operations
                     </CardTitle>
-                    <CardDescription className="font-medium text-blue-600/80 uppercase tracking-tight text-[10px]">
-                        Official LGU Operations Portal
+                    <CardDescription className="text-center text-xs">
+                        Sign in to Marikina Intel
                     </CardDescription>
                 </CardHeader>
+                <CardContent className="space-y-3">
+                    {/* Login Form */}
+                    <form onSubmit={handleSubmit} className="space-y-3">
+                        {error && (
+                            <div className="rounded-md bg-destructive/10 p-2 text-xs text-destructive">
+                                {error}
+                            </div>
+                        )}
 
-                <CardContent className="space-y-4">
-                    {error && (
-                        <div className="p-2 text-[11px] font-medium text-center bg-red-50 text-red-600 rounded border border-red-100 animate-in fade-in zoom-in duration-200">
-                            {error}
-                        </div>
-                    )}
-
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="email" className="text-xs uppercase text-slate-500">Official Email</Label>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="email" className="text-xs">
+                                Official Email
+                            </Label>
                             <Input
                                 id="email"
                                 name="email"
@@ -69,12 +65,21 @@ export default function LoginForm({ onLogin }: { onLogin: (user: any) => void })
                                 value={formData.email}
                                 onChange={handleInputChange}
                                 required
+                                className="h-8 text-sm"
                             />
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
-                                <Label htmlFor="password" text-xs text-slate-500>Secure Access Key</Label>
+                                <Label htmlFor="password" className="text-xs">
+                                    Password
+                                </Label>
+                                <button
+                                    type="button"
+                                    className="text-[10px] text-primary hover:underline"
+                                >
+                                    Forgot password?
+                                </button>
                             </div>
                             <Input
                                 id="password"
@@ -84,28 +89,44 @@ export default function LoginForm({ onLogin }: { onLogin: (user: any) => void })
                                 value={formData.password}
                                 onChange={handleInputChange}
                                 required
+                                className="h-8 text-sm"
                             />
                         </div>
 
-                        <Button type="submit" className="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold" size="lg">
-                            Authorize & Access
+                        <Button type="submit" className="w-full" size="sm">
+                            Sign In
                         </Button>
                     </form>
 
-                    {/* Developer Helper for testing */}
+                    {/* Demo Helper */}
                     <div className="text-center">
                         <button 
+                            type="button"
                             onClick={() => setFormData({email: "admin@marikina.gov.ph", password: "Marikina2026"})}
-                            className="text-[10px] text-slate-400 hover:text-blue-600 transition-colors"
+                            className="text-[10px] text-muted-foreground hover:text-primary transition-colors"
                         >
-                            (Fill demo credentials)
+                            Fill demo credentials
                         </button>
                     </div>
 
-                    <div className="pt-4 border-t border-slate-100">
-                        <p className="text-center text-[10px] text-muted-foreground leading-relaxed uppercase tracking-widest opacity-60">
-                            Authorized Personnel Only <br/>
-                            Managed by Nexvision
+                    {/* Divider */}
+                    <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t border-border" />
+                        </div>
+                        <div className="relative flex justify-center text-[10px] uppercase">
+                            <span className="bg-card px-2 text-muted-foreground">
+                                Authorized personnel only
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="text-center space-y-1.5">
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                            City of Marikina
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                            Powered by <span className="font-medium text-primary">Nexstation</span>
                         </p>
                     </div>
                 </CardContent>
